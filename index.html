@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>App Pulse — Product Retention Intelligence</title>
+
+    <!-- Favicon (inline SVG via data URI) -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%236366F1'/%3E%3Cstop offset='100%25' stop-color='%238B5CF6'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect x='8' y='28' width='8' height='24' rx='2' fill='url(%23g)'/%3E%3Crect x='20' y='18' width='8' height='34' rx='2' fill='url(%23g)'/%3E%3Crect x='32' y='24' width='8' height='28' rx='2' fill='url(%23g)'/%3E%3Cpolyline points='6,20 18,10 30,16 42,6 54,14' fill='none' stroke='url(%23g)' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='54' cy='14' r='3' fill='%238B5CF6'/%3E%3C/svg%3E">
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Leaflet CSS -->
+    <link href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="css/styles.css" rel="stylesheet">
+</head>
+<body>
+
+    <!-- ==================== HEADER ==================== -->
+    <nav class="navbar navbar-light sticky-top" id="main-nav">
+        <div class="container-fluid">
+            <a class="navbar-brand d-flex align-items-center" href="#">
+                <svg class="logo-svg me-2" viewBox="0 0 64 64" width="40" height="40">
+                    <defs>
+                        <linearGradient id="logoGrad" x1="0" y1="0" x2="1" y2="1">
+                            <stop offset="0%" stop-color="#6366F1"/>
+                            <stop offset="100%" stop-color="#8B5CF6"/>
+                        </linearGradient>
+                    </defs>
+                    <rect x="8" y="28" width="8" height="24" rx="2" fill="url(#logoGrad)"/>
+                    <rect x="20" y="18" width="8" height="34" rx="2" fill="url(#logoGrad)"/>
+                    <rect x="32" y="24" width="8" height="28" rx="2" fill="url(#logoGrad)"/>
+                    <polyline points="6,20 18,10 30,16 42,6 54,14" fill="none" stroke="url(#logoGrad)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                    <circle cx="54" cy="14" r="3" fill="#8B5CF6"/>
+                </svg>
+                <span class="brand-text">App Pulse</span>
+            </a>
+            <span class="navbar-text">Product Retention Intelligence Dashboard</span>
+        </div>
+    </nav>
+
+    <!-- ==================== LOADING SPINNER ==================== -->
+    <div id="loading-overlay">
+        <div class="spinner-wrap">
+            <div class="spinner-border text-info" role="status" style="width:3rem;height:3rem;">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-3">Loading dashboard data&hellip;</p>
+        </div>
+    </div>
+
+    <!-- ==================== FILTER BAR ==================== -->
+    <div id="filter-bar" class="sticky-filter-bar">
+        <div class="container-fluid">
+            <div class="row g-2 align-items-end">
+                <!-- Date Range -->
+                <div class="col-lg col-md-4 col-6">
+                    <label class="filter-label"><i class="bi bi-calendar3"></i> Date Range</label>
+                    <select id="filter-date-range" class="form-select form-select-sm">
+                        <option value="all" selected>All Time</option>
+                        <option value="30">Last 30 Days</option>
+                        <option value="90">Last 90 Days</option>
+                        <option value="365">Last 1 Year</option>
+                    </select>
+                </div>
+                <!-- Country -->
+                <div class="col-lg col-md-4 col-6">
+                    <label class="filter-label"><i class="bi bi-globe2"></i> Country</label>
+                    <select id="filter-country" class="form-select form-select-sm" multiple>
+                    </select>
+                </div>
+                <!-- Platform -->
+                <div class="col-lg col-md-4 col-6">
+                    <label class="filter-label"><i class="bi bi-phone"></i> Platform</label>
+                    <select id="filter-platform" class="form-select form-select-sm" multiple>
+                    </select>
+                </div>
+                <!-- App Version -->
+                <div class="col-lg col-md-4 col-6">
+                    <label class="filter-label"><i class="bi bi-tag"></i> App Version</label>
+                    <select id="filter-version" class="form-select form-select-sm" multiple>
+                    </select>
+                </div>
+                <!-- Category -->
+                <div class="col-lg col-md-4 col-6">
+                    <label class="filter-label"><i class="bi bi-grid"></i> Category</label>
+                    <select id="filter-category" class="form-select form-select-sm" multiple>
+                    </select>
+                </div>
+                <!-- Subscription -->
+                <div class="col-lg col-md-4 col-6">
+                    <label class="filter-label"><i class="bi bi-person-badge"></i> Subscription</label>
+                    <select id="filter-subscription" class="form-select form-select-sm">
+                        <option value="all" selected>All</option>
+                        <option value="1">Subscriber</option>
+                        <option value="0">Non-subscriber</option>
+                    </select>
+                </div>
+                <!-- Device Model -->
+                <div class="col-lg col-md-4 col-6">
+                    <label class="filter-label"><i class="bi bi-cpu"></i> Device Model</label>
+                    <select id="filter-device" class="form-select form-select-sm" multiple>
+                    </select>
+                </div>
+                <!-- Reset -->
+                <div class="col-lg-auto col-md-4 col-6 d-flex align-items-end">
+                    <button id="btn-reset-filters" class="btn btn-sm w-100">
+                        <i class="bi bi-arrow-counterclockwise"></i> Reset Filters
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== DASHBOARD CONTENT ==================== -->
+    <div class="container-fluid px-4 py-4" id="dashboard-content" style="display:none;">
+
+        <!-- ===== SECTION 1: Product Health Overview ===== -->
+        <section id="section-health" class="mb-5">
+            <h3 class="section-title"><i class="bi bi-heart-pulse"></i> Product Health Overview</h3>
+
+            <!-- Metric Cards -->
+            <div class="row g-3 mb-4" id="metric-cards">
+                <div class="col-xl col-md-4 col-6">
+                    <div class="metric-card">
+                        <div class="metric-icon"><i class="bi bi-star-fill"></i></div>
+                        <div class="metric-value" id="mc-avg-rating">—</div>
+                        <div class="metric-label">Avg Rating</div>
+                    </div>
+                </div>
+                <div class="col-xl col-md-4 col-6">
+                    <div class="metric-card">
+                        <div class="metric-icon"><i class="bi bi-emoji-smile"></i></div>
+                        <div class="metric-value" id="mc-avg-sentiment">—</div>
+                        <div class="metric-label">Avg Sentiment Score</div>
+                    </div>
+                </div>
+                <div class="col-xl col-md-4 col-6">
+                    <div class="metric-card">
+                        <div class="metric-icon"><i class="bi bi-calendar-week"></i></div>
+                        <div class="metric-value" id="mc-ret7d">—</div>
+                        <div class="metric-label">7-Day Retention</div>
+                    </div>
+                </div>
+                <div class="col-xl col-md-4 col-6">
+                    <div class="metric-card">
+                        <div class="metric-icon"><i class="bi bi-calendar-month"></i></div>
+                        <div class="metric-value" id="mc-ret30d">—</div>
+                        <div class="metric-label">30-Day Retention</div>
+                    </div>
+                </div>
+                <div class="col-xl col-md-4 col-6">
+                    <div class="metric-card">
+                        <div class="metric-icon"><i class="bi bi-person-dash"></i></div>
+                        <div class="metric-value" id="mc-churn">—</div>
+                        <div class="metric-label">Avg Churn Probability</div>
+                    </div>
+                </div>
+                <div class="col-xl col-md-4 col-6">
+                    <div class="metric-card">
+                        <div class="metric-icon"><i class="bi bi-clock-history"></i></div>
+                        <div class="metric-value" id="mc-session">—</div>
+                        <div class="metric-label">Avg Session Duration</div>
+                    </div>
+                </div>
+                <div class="col-xl col-md-4 col-6">
+                    <div class="metric-card">
+                        <div class="metric-icon"><i class="bi bi-activity"></i></div>
+                        <div class="metric-value" id="mc-daumau">—</div>
+                        <div class="metric-label">DAU/MAU Ratio</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts -->
+            <div class="row g-4">
+                <div class="col-lg-6 col-xl-4">
+                    <div class="chart-card">
+                        <h6 class="chart-title">Rating Distribution</h6>
+                        <div class="chart-wrap"><canvas id="chart-rating-dist" aria-label="Horizontal bar chart showing count of reviews per star rating"></canvas></div>
+                    </div>
+                </div>
+                <div class="col-lg-6 col-xl-4">
+                    <div class="chart-card">
+                        <h6 class="chart-title">Sentiment Distribution</h6>
+                        <div class="chart-wrap"><canvas id="chart-sentiment-dist" aria-label="Doughnut chart showing proportion of positive, neutral, and negative reviews"></canvas></div>
+                    </div>
+                </div>
+                <div class="col-lg-6 col-xl-4">
+                    <div class="chart-card">
+                        <h6 class="chart-title">Retention vs Rating</h6>
+                        <div class="chart-wrap"><canvas id="chart-retention-rating" aria-label="Scatter plot of rating vs 30-day retention"></canvas></div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="chart-card">
+                        <h6 class="chart-title">Sentiment Trend Over Time</h6>
+                        <div class="chart-wrap"><canvas id="chart-sentiment-trend" aria-label="Line chart showing monthly average sentiment score over time"></canvas></div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="chart-card">
+                        <h6 class="chart-title">Reviews Volume vs Rating</h6>
+                        <div class="chart-wrap"><canvas id="chart-volume-rating" aria-label="Dual-axis chart showing monthly review count and average rating"></canvas></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== SECTION 2: Retention Diagnostics ===== -->
+        <section id="section-retention" class="mb-5">
+            <h3 class="section-title"><i class="bi bi-graph-up-arrow"></i> Retention Diagnostics</h3>
+            <div class="row g-4">
+                <div class="col-lg-6 col-xl-4">
+                    <div class="chart-card">
+                        <h6 class="chart-title">Retention by App Version</h6>
+                        <div class="chart-wrap"><canvas id="chart-ret-version" aria-label="Bar chart of mean 30-day retention by app version"></canvas></div>
+                    </div>
+                </div>
+                <div class="col-lg-6 col-xl-4">
+                    <div class="chart-card">
+                        <h6 class="chart-title">Retention by Device &amp; App Version</h6>
+                        <div class="chart-wrap"><canvas id="chart-ret-device-version" aria-label="Heatmap of retention by device model and app version"></canvas></div>
+                    </div>
+                </div>
+                <div class="col-lg-6 col-xl-4">
+                    <div class="chart-card">
+                        <h6 class="chart-title">
+                            Retention by Country
+                            <div class="form-check form-switch d-inline-block ms-2">
+                                <input class="form-check-input" type="checkbox" id="toggle-ret-map" checked>
+                                <label class="form-check-label small" for="toggle-ret-map" id="toggle-ret-map-label">30d</label>
+                            </div>
+                        </h6>
+                        <div class="chart-wrap" style="position:relative;"><div id="map-retention" style="height:300px;width:100%;"></div></div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="chart-card">
+                        <h6 class="chart-title">Retention vs Session Duration</h6>
+                        <div class="chart-wrap"><canvas id="chart-ret-session" aria-label="Scatter plot of session duration vs 30-day retention"></canvas></div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="chart-card">
+                        <h6 class="chart-title">Retention by Category</h6>
+                        <div class="chart-wrap"><canvas id="chart-ret-category" aria-label="Bar chart of mean 30-day retention by category"></canvas></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== SECTION 3: Churn Drivers ===== -->
+        <section id="section-churn" class="mb-5">
+            <h3 class="section-title"><i class="bi bi-exclamation-triangle"></i> Churn Drivers</h3>
+            <div class="row g-4">
+                <div class="col-lg-6">
+                    <div class="chart-card">
+                        <h6 class="chart-title">Feature Importance Simulation</h6>
+                        <div class="chart-wrap"><canvas id="chart-feature-importance" aria-label="Horizontal bar chart showing standardized regression coefficients for churn prediction features"></canvas></div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="chart-card">
+                        <h6 class="chart-title">Churn Probability vs Crash Count</h6>
+                        <div class="chart-wrap"><canvas id="chart-churn-crash" aria-label="Scatter plot of crash count vs churn probability"></canvas></div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="chart-card">
+                        <h6 class="chart-title">Churn by Subscription Status</h6>
+                        <div class="chart-wrap"><canvas id="chart-churn-sub" aria-label="Grouped bar chart of churn probability by subscription status"></canvas></div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="chart-card">
+                        <h6 class="chart-title">Churn by App Size</h6>
+                        <div class="chart-wrap"><canvas id="chart-churn-size" aria-label="Scatter plot of app size vs churn probability"></canvas></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== SECTION 4: Technical Issue Analysis ===== -->
+        <section id="section-tech" class="mb-5">
+            <h3 class="section-title"><i class="bi bi-bug"></i> Technical Issue Analysis</h3>
+            <div class="row g-4">
+                <div class="col-lg-6">
+                    <div class="chart-card">
+                        <h6 class="chart-title">Crash Frequency by App Version &amp; OS</h6>
+                        <div class="chart-wrap"><canvas id="chart-crash-version-os" aria-label="Heatmap of crash count by app version and OS version"></canvas></div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="chart-card">
+                        <h6 class="chart-title">Crash Impact on Rating</h6>
+                        <div class="chart-wrap"><canvas id="chart-crash-rating" aria-label="Scatter plot of crash count vs rating"></canvas></div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="chart-card">
+                        <h6 class="chart-title">OS Version Issues</h6>
+                        <div class="chart-wrap"><canvas id="chart-os-crash" aria-label="Bar chart of mean crash count by OS version"></canvas></div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="chart-card">
+                        <h6 class="chart-title">Crash Count by Network Type</h6>
+                        <div class="chart-wrap"><canvas id="chart-network-crash" aria-label="Bar chart of mean crash count by network type"></canvas></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== SECTION 5: Customer Segmentation ===== -->
+        <section id="section-segment" class="mb-5">
+            <h3 class="section-title"><i class="bi bi-people"></i> Customer Segmentation</h3>
+            <div class="row g-4">
+                <div class="col-lg-6 col-xl-4">
+                    <div class="chart-card">
+                        <h6 class="chart-title">Retention by Subscription Status</h6>
+                        <div class="chart-wrap"><canvas id="chart-ret-sub" aria-label="Grouped bar chart of retention by subscription status"></canvas></div>
+                    </div>
+                </div>
+                <div class="col-lg-6 col-xl-4">
+                    <div class="chart-card">
+                        <h6 class="chart-title">In-App Purchase vs Retention</h6>
+                        <div class="chart-wrap"><canvas id="chart-iap-ret" aria-label="Grouped bar chart of retention by in-app purchase status"></canvas></div>
+                    </div>
+                </div>
+                <div class="col-lg-6 col-xl-4">
+                    <div class="chart-card">
+                        <h6 class="chart-title">Retention by Verified User</h6>
+                        <div class="chart-wrap"><canvas id="chart-ret-verified" aria-label="Bar chart of retention by verified user status"></canvas></div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="chart-card">
+                        <h6 class="chart-title">Rating by Subscription Status</h6>
+                        <div class="chart-wrap"><canvas id="chart-rating-sub" aria-label="Bar chart of mean rating by subscription status"></canvas></div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="chart-card">
+                        <h6 class="chart-title">Retention by Country</h6>
+                        <div class="chart-wrap"><canvas id="chart-ret-country" aria-label="Bar chart of mean 30-day retention by country"></canvas></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== SECTION 6: Review Intelligence ===== -->
+        <section id="section-reviews" class="mb-5">
+            <h3 class="section-title"><i class="bi bi-chat-left-text"></i> Review Intelligence</h3>
+            <div class="row g-4">
+                <div class="col-lg-6">
+                    <div class="chart-card">
+                        <h6 class="chart-title">Sentiment vs Retention</h6>
+                        <div class="chart-wrap"><canvas id="chart-sentiment-retention" aria-label="Scatter plot of sentiment score vs 30-day retention"></canvas></div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="chart-card">
+                        <h6 class="chart-title">Review Length vs Sentiment</h6>
+                        <div class="chart-wrap"><canvas id="chart-length-sentiment" aria-label="Scatter plot of review length vs sentiment score, color-coded by sentiment label"></canvas></div>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <div class="chart-card">
+                        <h6 class="chart-title">Most Helpful Negative Reviews</h6>
+                        <div class="mb-2">
+                            <input type="text" id="review-search" class="form-control form-control-sm" placeholder="Search reviews...">
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover" id="negative-reviews-table">
+                                <thead>
+                                    <tr>
+                                        <th>Review</th>
+                                        <th style="width:80px">Rating</th>
+                                        <th style="width:100px">Helpful Votes</th>
+                                        <th style="width:100px">App Version</th>
+                                        <th style="width:120px">Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="reviews-tbody"></tbody>
+                            </table>
+                        </div>
+                        <nav id="reviews-pagination" aria-label="Reviews pagination">
+                            <ul class="pagination pagination-sm justify-content-center mt-2"></ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== SECTION 7: Developer Response Impact ===== -->
+        <section id="section-devresponse" class="mb-5">
+            <h3 class="section-title"><i class="bi bi-reply"></i> Developer Response Impact</h3>
+            <div class="row g-4">
+                <div class="col-lg-6">
+                    <div class="chart-card">
+                        <h6 class="chart-title">Response Time vs Rating</h6>
+                        <div class="chart-wrap"><canvas id="chart-response-rating" aria-label="Bar chart of mean response time by rating for developer-replied reviews"></canvas></div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="chart-card">
+                        <h6 class="chart-title">Developer Reply vs Retention</h6>
+                        <div class="chart-wrap"><canvas id="chart-reply-retention" aria-label="Grouped bar chart of retention by developer reply status"></canvas></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== SECTION 8: Advanced Product Insights ===== -->
+        <section id="section-advanced" class="mb-5">
+            <h3 class="section-title"><i class="bi bi-lightbulb"></i> Advanced Product Insights</h3>
+            <div class="row g-4">
+                <div class="col-lg-6 col-xl-4">
+                    <div class="chart-card">
+                        <h6 class="chart-title">Top Risky App Versions</h6>
+                        <div class="chart-wrap"><canvas id="chart-risk-version" aria-label="Horizontal bar chart of top 5 risky app versions by retention risk score"></canvas></div>
+                    </div>
+                </div>
+                <div class="col-lg-6 col-xl-4">
+                    <div class="chart-card">
+                        <h6 class="chart-title">Top Risky Countries</h6>
+                        <div class="chart-wrap"><canvas id="chart-risk-country" aria-label="Horizontal bar chart of risk score by country"></canvas></div>
+                    </div>
+                </div>
+                <div class="col-lg-6 col-xl-4">
+                    <div class="chart-card">
+                        <h6 class="chart-title">Bug Impact Index by Version</h6>
+                        <div class="chart-wrap"><canvas id="chart-bug-index" aria-label="Horizontal bar chart of bug impact index by app version"></canvas></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </div><!-- /dashboard-content -->
+
+    <!-- ==================== NO-DATA MESSAGE ==================== -->
+    <div id="no-data-message" class="text-center py-5" style="display:none;">
+        <i class="bi bi-funnel" style="font-size:3rem;color:#6366F1;"></i>
+        <h4 class="mt-3">No data matches the current filters</h4>
+        <p>Try adjusting the filters above or reset them.</p>
+    </div>
+
+    <!-- ==================== SCRIPTS ==================== -->
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <!-- chartjs-chart-matrix -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-matrix@2.0.1/dist/chartjs-chart-matrix.min.js"></script>
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- PapaParse for CSV parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    <!-- App JS -->
+    <script src="js/app.js"></script>
+</body>
+</html>
